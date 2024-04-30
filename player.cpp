@@ -45,24 +45,18 @@ void Player::take_damage(int damage) {
     _HP -= damage;
 }
 
-void Player::attack(Player& enemy) {
+/*
+    Checkea si el jugador puede esquivar o si debe recibir daño con un ataque.
+*/
+bool Player::check_dodge() {
     int probability_num = RANDOM(0, 100);
-    int enemy_eva = enemy.getEVA();
+    int evasion = getEVA();
 
-    bool DODGE = (enemy_eva <= probability_num) ? true : false;
-    if (DODGE){
-        cout << "Dodge" << endl;
-        return;
-    }
-    // QUIZÁ HAY QUE CAMBIAR POR ENUNCIADO:
-    /*
-    La partida se desarrolla por rondas. Cada ronda sigue el siguiente proceso:
-    1. Se muestra la vida actual de todos los jugadores. El jugador controlado por consola elige a
-    quien atacar, mientras que los otros procesos o jugadores lo hacen de forma aleatoria.
-    2. Se muestra quienes atacan a cada jugador, seguido de quienes lograron esquivar los ataques.
-    3. Se realiza la reduccion de la vida de cada jugador segun los daños recibidos; si no recibio
-    daño, no se reduce la vida.
-    */
+    bool DODGE = (evasion <= probability_num) ? true : false;
+   return DODGE;  
+}
+
+void Player::attack(Player& enemy) {
     int DAMAGE = getATK() - enemy.getDEF();
     enemy.take_damage(DAMAGE);
 }

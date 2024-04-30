@@ -15,6 +15,7 @@ class Player {
     // Funciones
     void print_stats();
     void take_damage(int damage);
+    bool check_dodge();
     void attack(Player& enemy);
    
   private:

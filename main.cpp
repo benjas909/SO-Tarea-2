@@ -3,7 +3,42 @@
 #include <sys/wait.h>
 #include <time.h>
 #include <random>
+
 using namespace std;
+
+void closePipesNotUsed(int pipes[8][2], int pipesUsed[][2], int numPipesUsed)
+{
+  for (int i = 0; i < 8; i++)
+  {
+    bool readUsed = false;
+    bool writeUsed = false;
+
+    for (int j = 0; j < numPipesUsed; j++)
+    {
+      if (pipesUsed[j][0] == i)
+      {
+        if (pipesUsed[j][1] == 0){
+          readUsed = true;
+        } else {
+          writeUsed = true;
+        }
+      }
+    }
+
+    if (readUsed == true){
+      printf("close pipes[%i][1]\n", i);
+      close(pipes[i][1]);
+    } else if (writeUsed == true){
+      printf("close pipes[%i][0]\n", i);
+      close(pipes[i][0]);
+    } else{
+      printf("//close pipes[%i][0]\n", i);
+      printf("close pipes[%i][1]\n", i);
+      close(pipes[i][0]);
+      close(pipes[i][1]);
+    }
+  }
+}
 
 int randInt(int low, int high)
 {
@@ -29,9 +64,8 @@ int main()
   */
 
   int signalpipes[5][2];
-
-  int i = 0;
-  for (i; i < 8; i++)
+  int i;
+  for (i = 0; i < 8; i++)
   {
     if (i < 5)
     {
@@ -83,23 +117,24 @@ int main()
   DEF = randInt(10, 25);
   EVA = 60 - DEF;
 
-  int round = 1;
+  int round;
 
   int pStat[4]; // Arreglo temporal para guardar las stats de cada luchador y enviarlas al proceso padre
   if (playerPID && wrestlerPID2 && wrestlerPID3 && wrestlerPID4)
   {
-    close(pipes[0][1]);
-    close(pipes[1][0]);
-    close(pipes[1][1]);
-    close(pipes[2][1]);
-    close(pipes[3][0]);
-    close(pipes[3][1]);
-    close(pipes[5][0]);
-    close(pipes[5][1]);
-    close(pipes[6][1]);
-    close(pipes[7][0]);
-    close(pipes[7][1]);
-
+    // close(pipes[0][1]);
+    // close(pipes[1][0]);
+    // close(pipes[1][1]);
+    // close(pipes[2][1]);
+    // close(pipes[3][0]);
+    // close(pipes[3][1]);
+    // close(pipes[5][0]);
+    // close(pipes[5][1]);
+    // close(pipes[6][1]);
+    // close(pipes[7][0]);
+    // close(pipes[7][1]);
+    int pipesUsed[][2] = {{0, 0}, {2, 0}, {4, 0}, {6, 0}};
+    closePipesNotUsed(pipes, pipesUsed, 4);
     read(pipes[0][0], stats[0], 4 * sizeof(int));
     read(pipes[2][0], stats[1], 4 * sizeof(int));
     read(pipes[4][0], stats[2], 4 * sizeof(int));
@@ -228,7 +263,7 @@ int main()
 
   int isInvalid = 1;
   int signal = 1;
-  for (round; noWinner; round++)
+  for (round = 1; noWinner; round++)
   {
     if (playerPID && wrestlerPID2 && wrestlerPID3 && wrestlerPID4)
     {

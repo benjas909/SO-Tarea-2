@@ -1,17 +1,16 @@
 CC=g++
-CFLAGS=-c -Wall
-LDFLAGS=
-SOURCES=main.cpp player.cpp
+CCFLAGS=-Wall
+SOURCES=main.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 EXECUTABLE=main
 
-all: $(SOURCES) $(EXECUTABLE)
+all: $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS)
-	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+	$(CC) $(CCFLAGS) $(OBJECTS) -o $(EXECUTABLE)
 
 .cpp.o:
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CCFLAGS) -c $< -o $@
 
 clean:
 	rm -f $(OBJECTS) $(EXECUTABLE)

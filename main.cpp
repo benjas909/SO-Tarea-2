@@ -17,20 +17,37 @@ int randInt(int low, int high)
 int main()
 {
   int pipes[8][2];
+  /*
+  0: Jugador a Padre
+  1: Padre a Jugador
+  2: Luchador 2 a Padre
+  3: Padre a Luchador 2
+  4: Luchador 3 a Padre
+  5: Padre a Luchador 3
+  6: Luchador 4 a Padre
+  7: Padre a Luchador 4
+  */
+
+  int signalpipes[5][2];
 
   int i = 0;
   for (i; i < 8; i++)
   {
+    if (i < 5)
+    {
+      pipe(signalpipes[i]);
+    }
     pipe(pipes[i]);
   }
 
-  int stats[4][4];
+  int stats[4][4]; // Se guardan las stats de cada luchador. 0: Jugador, 1: Luchador 1, etc. De la forma [HP, ATK, DEF, EVA]
   int ATK, DEF, HP, EVA;
   pid_t playerPID = fork();
   pid_t wrestlerPID2;
   pid_t wrestlerPID3;
   pid_t wrestlerPID4;
 
+  // Creación de forks
   if (playerPID > 0)
   {
     wrestlerPID2 = fork();
@@ -68,7 +85,7 @@ int main()
 
   int round = 1;
 
-  int pStat[4];
+  int pStat[4]; // Arreglo temporal para guardar las stats de cada luchador y enviarlas al proceso padre
   if (playerPID && wrestlerPID2 && wrestlerPID3 && wrestlerPID4)
   {
     close(pipes[0][1]);
@@ -210,12 +227,15 @@ int main()
   int choice;
 
   int isInvalid = 1;
+  int signal = 1;
   for (round; noWinner; round++)
   {
     if (playerPID && wrestlerPID2 && wrestlerPID3 && wrestlerPID4)
     {
       cout << "Ronda ";
       cout << round << endl;
+
+      write(signalpipes[0][1], &signal, sizeof(signal));
 
       read(pipes[0][0], &choice, sizeof(int));
       cout << "El jugador 1 ataca al luchador ";
@@ -232,25 +252,49 @@ int main()
       read(pipes[6][0], &choice, sizeof(int));
       cout << "El jugador 4 ataca al luchador ";
       cout << choice << endl;
+
+      write(signalpipes[0][1], &signal, sizeof(signal));
+      // write(pipes[3][1], &signal, sizeof(int));
+      // write(pipes[5][1], &signal, sizeof(int));
+      // write(pipes[7][1], &signal, sizeof(int));
     }
-    if (playerPID == 0)
+    else if (playerPID == 0)
     {
 
       // Aquí debe ir la lógica del jugador en cada ronda
-      // close(pipes[0][0]);
+
+      read(signalpipes[0][0], &signal, sizeof(signal));
+
       cout << "Tu salud: ";
       cout << HP << endl;
-      cout << "¿A quién deseas atacar?... Parcero.\n\t1)Luchador 1\n\t2)Luchador 2\n\t3)Luchador 3" << endl;
+
+      write(signalpipes[1][1], &signal, sizeof(signal));
+      read(signalpipes[4][0], &signal, sizeof(signal));
+
+      cout << "¿A quién deseas atacar?... Parcero.\n\t1)Luchador 1\n\t2)Luchador 2\n\t3)Luchador 3\n> ";
       cin >> choice;
+
+      write(signalpipes[1][1], &signal, sizeof(signal));
+
       write(pipes[0][1], &choice, sizeof(int));
+
+      read(signalpipes[0][0], &signal, sizeof(signal));
+      write(signalpipes[1][1], &signal, sizeof(signal));
 
       // Hasta aquí
     }
     else if (wrestlerPID2 == 0)
     {
       // Aquí debe ir la lógica del NPC en cada ronda
+
+      read(signalpipes[1][0], &signal, sizeof(signal));
+
       cout << "Salud luchador 2: ";
       cout << HP << endl;
+
+      write(signalpipes[2][1], &signal, sizeof(signal));
+      read(signalpipes[1][0], &signal, sizeof(signal));
+
       while (isInvalid)
       {
         choice = randInt(1, 4);
@@ -259,15 +303,28 @@ int main()
           isInvalid = 0;
         }
       }
+
+      write(signalpipes[2][1], &signal, sizeof(signal));
+
       write(pipes[2][1], &choice, sizeof(int));
+
+      read(signalpipes[1][0], &signal, sizeof(signal));
+      write(signalpipes[2][1], &signal, sizeof(signal));
 
       // Hasta acá
     }
     else if (wrestlerPID3 == 0)
     {
       // Aquí debe ir la lógica del NPC en cada ronda
+
+      read(signalpipes[2][0], &signal, sizeof(signal));
+
       cout << "Salud luchador 3: ";
       cout << HP << endl;
+
+      write(signalpipes[3][1], &signal, sizeof(signal));
+      read(signalpipes[2][0], &signal, sizeof(signal));
+
       while (isInvalid)
       {
         choice = randInt(1, 4);
@@ -276,14 +333,28 @@ int main()
           isInvalid = 0;
         }
       }
+
+      write(signalpipes[3][1], &signal, sizeof(signal));
+
       write(pipes[4][1], &choice, sizeof(int));
+
+      read(signalpipes[2][0], &signal, sizeof(signal));
+      write(signalpipes[3][1], &signal, sizeof(signal));
+
       // Hasta acá
     }
     else if (wrestlerPID4 == 0)
     {
       // Aquí debe ir la lógica del NPC en cada ronda
+
+      read(signalpipes[3][0], &signal, sizeof(signal));
+
       cout << "Salud luchador 4: ";
       cout << HP << endl;
+
+      write(signalpipes[4][1], &signal, sizeof(signal));
+      read(signalpipes[3][0], &signal, sizeof(signal));
+
       while (isInvalid)
       {
         choice = randInt(1, 4);
@@ -292,7 +363,10 @@ int main()
           isInvalid = 0;
         }
       }
+
+      write(signalpipes[4][1], &signal, sizeof(signal));
       write(pipes[6][1], &choice, sizeof(int));
+      read(signalpipes[3][0], &signal, sizeof(signal));
       // Hasta acá
     }
 

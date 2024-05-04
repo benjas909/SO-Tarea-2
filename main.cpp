@@ -17,21 +17,29 @@ void closePipesNotUsed(int pipes[8][2], int pipesUsed[][2], int numPipesUsed)
     {
       if (pipesUsed[j][0] == i)
       {
-        if (pipesUsed[j][1] == 0){
+        if (pipesUsed[j][1] == 0)
+        {
           readUsed = true;
-        } else {
+        }
+        else
+        {
           writeUsed = true;
         }
       }
     }
 
-    if (readUsed == true){
+    if (readUsed == true)
+    {
       printf("close pipes[%i][1]\n", i);
       close(pipes[i][1]);
-    } else if (writeUsed == true){
+    }
+    else if (writeUsed == true)
+    {
       printf("close pipes[%i][0]\n", i);
       close(pipes[i][0]);
-    } else{
+    }
+    else
+    {
       printf("//close pipes[%i][0]\n", i);
       printf("close pipes[%i][1]\n", i);
       close(pipes[i][0]);
@@ -64,6 +72,14 @@ int main()
   */
 
   int signalpipes[5][2];
+  /*
+  0: Padre a Jugador
+  1: Jugador a Luchador 2
+  2: Luchador 2 a Luchador 3
+  3: Luchador 3 a Luchador 4
+  4: Luchador 4 a Jugador
+  */
+
   int i;
   for (i = 0; i < 8; i++)
   {
@@ -122,28 +138,35 @@ int main()
   int pStat[4]; // Arreglo temporal para guardar las stats de cada luchador y enviarlas al proceso padre
   if (playerPID && wrestlerPID2 && wrestlerPID3 && wrestlerPID4)
   {
-    // close(pipes[0][1]);
-    // close(pipes[1][0]);
-    // close(pipes[1][1]);
-    // close(pipes[2][1]);
-    // close(pipes[3][0]);
-    // close(pipes[3][1]);
-    // close(pipes[5][0]);
-    // close(pipes[5][1]);
-    // close(pipes[6][1]);
-    // close(pipes[7][0]);
-    // close(pipes[7][1]);
-    int pipesUsed[][2] = {{0, 0}, {2, 0}, {4, 0}, {6, 0}};
-    closePipesNotUsed(pipes, pipesUsed, 4);
+    close(pipes[0][1]);
+    close(pipes[1][0]);
+    close(pipes[2][1]);
+    close(pipes[3][0]);
+    close(pipes[4][1]);
+    close(pipes[5][0]);
+    close(pipes[6][1]);
+    close(pipes[7][0]);
+
+    close(signalpipes[0][0]);
+    close(signalpipes[1][0]);
+    close(signalpipes[1][1]);
+    close(signalpipes[2][0]);
+    close(signalpipes[2][1]);
+    close(signalpipes[3][0]);
+    close(signalpipes[3][1]);
+    close(signalpipes[4][0]);
+    close(signalpipes[4][1]);
+
+    // int pipesUsed[][2] = {{0, 0}, {1, 1}, {2, 0}, {3, 1}, {4, 0}, {5, 1}, {6, 0}, {7, 1}};
+    // closePipesNotUsed(pipes, pipesUsed, 4);
     read(pipes[0][0], stats[0], 4 * sizeof(int));
     read(pipes[2][0], stats[1], 4 * sizeof(int));
     read(pipes[4][0], stats[2], 4 * sizeof(int));
     read(pipes[6][0], stats[3], 4 * sizeof(int));
   }
-  else if (playerPID == 0)
+  else if (!playerPID)
   {
     close(pipes[0][0]);
-    close(pipes[1][0]);
     close(pipes[1][1]);
     close(pipes[2][0]);
     close(pipes[2][1]);
@@ -157,6 +180,14 @@ int main()
     close(pipes[6][1]);
     close(pipes[7][0]);
     close(pipes[7][1]);
+
+    close(signalpipes[0][1]);
+    close(signalpipes[1][0]);
+    close(signalpipes[2][0]);
+    close(signalpipes[2][1]);
+    close(signalpipes[3][0]);
+    close(signalpipes[3][1]);
+    close(signalpipes[4][1]);
 
     pStat[0] = HP;
     pStat[1] = ATK;
@@ -165,14 +196,13 @@ int main()
 
     write(pipes[0][1], pStat, 4 * sizeof(int));
   }
-  else if (wrestlerPID2 == 0)
+  else if (!wrestlerPID2)
   {
     close(pipes[0][0]);
     close(pipes[0][1]);
     close(pipes[1][0]);
     close(pipes[1][1]);
     close(pipes[2][0]);
-    close(pipes[3][0]);
     close(pipes[3][1]);
     close(pipes[4][0]);
     close(pipes[4][1]);
@@ -182,6 +212,15 @@ int main()
     close(pipes[6][1]);
     close(pipes[7][0]);
     close(pipes[7][1]);
+
+    close(signalpipes[0][0]);
+    close(signalpipes[0][1]);
+    close(signalpipes[1][1]);
+    close(signalpipes[2][0]);
+    close(signalpipes[3][0]);
+    close(signalpipes[3][1]);
+    close(signalpipes[4][0]);
+    close(signalpipes[4][1]);
 
     pStat[0] = HP;
     pStat[1] = ATK;
@@ -190,7 +229,7 @@ int main()
 
     write(pipes[2][1], pStat, 4 * sizeof(int));
   }
-  else if (wrestlerPID3 == 0)
+  else if (!wrestlerPID3)
   {
     close(pipes[0][0]);
     close(pipes[0][1]);
@@ -201,12 +240,20 @@ int main()
     close(pipes[3][0]);
     close(pipes[3][1]);
     close(pipes[4][0]);
-    close(pipes[5][0]);
     close(pipes[5][1]);
     close(pipes[6][0]);
     close(pipes[6][1]);
     close(pipes[7][0]);
     close(pipes[7][1]);
+
+    close(signalpipes[0][0]);
+    close(signalpipes[0][1]);
+    close(signalpipes[1][0]);
+    close(signalpipes[1][1]);
+    close(signalpipes[2][1]);
+    close(signalpipes[3][0]);
+    close(signalpipes[4][0]);
+    close(signalpipes[4][1]);
 
     pStat[0] = HP;
     pStat[1] = ATK;
@@ -215,7 +262,7 @@ int main()
 
     write(pipes[4][1], pStat, 4 * sizeof(int));
   }
-  else if (wrestlerPID4 == 0)
+  else if (!wrestlerPID4)
   {
     close(pipes[0][0]);
     close(pipes[0][1]);
@@ -230,8 +277,16 @@ int main()
     close(pipes[5][0]);
     close(pipes[5][1]);
     close(pipes[6][0]);
-    close(pipes[7][0]);
     close(pipes[7][1]);
+
+    close(signalpipes[0][0]);
+    close(signalpipes[0][1]);
+    close(signalpipes[1][0]);
+    close(signalpipes[1][1]);
+    close(signalpipes[2][0]);
+    close(signalpipes[2][1]);
+    close(signalpipes[3][1]);
+    close(signalpipes[4][0]);
 
     pStat[0] = HP;
     pStat[1] = ATK;
@@ -293,7 +348,7 @@ int main()
       // write(pipes[5][1], &signal, sizeof(int));
       // write(pipes[7][1], &signal, sizeof(int));
     }
-    else if (playerPID == 0)
+    else if (!playerPID)
     {
 
       // Aquí debe ir la lógica del jugador en cada ronda
@@ -318,7 +373,7 @@ int main()
 
       // Hasta aquí
     }
-    else if (wrestlerPID2 == 0)
+    else if (!wrestlerPID2)
     {
       // Aquí debe ir la lógica del NPC en cada ronda
 
@@ -348,7 +403,7 @@ int main()
 
       // Hasta acá
     }
-    else if (wrestlerPID3 == 0)
+    else if (!wrestlerPID3)
     {
       // Aquí debe ir la lógica del NPC en cada ronda
 
@@ -378,7 +433,7 @@ int main()
 
       // Hasta acá
     }
-    else if (wrestlerPID4 == 0)
+    else if (!wrestlerPID4)
     {
       // Aquí debe ir la lógica del NPC en cada ronda
 
@@ -409,6 +464,53 @@ int main()
     {
       noWinner = 0;
     }
+  }
+
+  if (playerPID && wrestlerPID2 && wrestlerPID3 && wrestlerPID4)
+  {
+    close(pipes[0][0]);
+    close(pipes[1][1]);
+    close(pipes[2][0]);
+    close(pipes[3][1]);
+    close(pipes[4][0]);
+    close(pipes[5][1]);
+    close(pipes[6][0]);
+    close(pipes[7][1]);
+
+    close(signalpipes[0][1]);
+  }
+  else if (!playerPID)
+  {
+    close(pipes[0][1]);
+    close(pipes[1][0]);
+
+    close(signalpipes[0][0]);
+    close(signalpipes[1][1]);
+    close(signalpipes[4][0]);
+  }
+  else if (!wrestlerPID2)
+  {
+    close(pipes[2][1]);
+    close(pipes[3][0]);
+
+    close(signalpipes[1][0]);
+    close(signalpipes[2][1]);
+  }
+  else if (!wrestlerPID3)
+  {
+    close(pipes[4][1]);
+    close(pipes[5][0]);
+
+    close(signalpipes[2][0]);
+    close(signalpipes[3][1]);
+  }
+  else if (!wrestlerPID4)
+  {
+    close(pipes[6][1]);
+    close(pipes[7][0]);
+
+    close(signalpipes[3][0]);
+    close(signalpipes[4][1]);
   }
 
   return 0;

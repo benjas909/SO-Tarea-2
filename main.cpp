@@ -6,6 +6,12 @@
 
 using namespace std;
 
+bool checkEvasion(double probability)
+{
+  probability = probability / 100;
+  return rand() < probability * ((double)RAND_MAX + 1.0);
+}
+
 void closePipesNotUsed(int pipes[8][2], int pipesUsed[][2], int numPipesUsed)
 {
   for (int i = 0; i < 8; i++)
@@ -268,6 +274,7 @@ int main()
 
   int isInvalid = 1;
   int signal = 1;
+  int evadesAttack = 0;
   for (round = 1; noWinner; round++)
   {
     if (playerPID && wrestlerPID2 && wrestlerPID3 && wrestlerPID4)
@@ -275,23 +282,27 @@ int main()
       cout << "Ronda ";
       cout << round << endl;
 
-      write(signalpipes[0][1], &signal, sizeof(signal));
+      write(signalpipes[0][1], &signal, sizeof(signal)); // Señal de partida
 
       read(pipes[0][0], &choice, sizeof(int));
       cout << "El jugador 1 ataca al luchador ";
       cout << choice << endl;
+      // Enviar al luchador atacado la stat de ataque del atacante.
 
       read(pipes[2][0], &choice, sizeof(int));
       cout << "El jugador 2 ataca al luchador ";
       cout << choice << endl;
+      // Enviar al luchador atacado la stat de ataque del atacante.
 
       read(pipes[4][0], &choice, sizeof(int));
       cout << "El jugador 3 ataca al luchador ";
       cout << choice << endl;
+      // Enviar al luchador atacado la stat de ataque del atacante.
 
       read(pipes[6][0], &choice, sizeof(int));
       cout << "El jugador 4 ataca al luchador ";
       cout << choice << endl;
+      // Enviar al luchador atacado la stat de ataque del atacante.
 
       write(signalpipes[0][1], &signal, sizeof(signal));
     }
@@ -299,12 +310,12 @@ int main()
     {
       // Aquí debe ir la lógica del jugador en cada ronda
 
-      read(signalpipes[0][0], &signal, sizeof(signal));
+      read(signalpipes[0][0], &signal, sizeof(signal)); // Espera y lee la señal para partir
 
       cout << "Tu salud: ";
       cout << HP << endl;
 
-      write(signalpipes[1][1], &signal, sizeof(signal));
+      write(signalpipes[1][1], &signal, sizeof(signal)); // Escribe señal para que el siguiente proceso comience la ronda
       read(signalpipes[4][0], &signal, sizeof(signal));
 
       cout << "¿A quién deseas atacar?... Parcero.\n\t1)Luchador 1\n\t2)Luchador 2\n\t3)Luchador 3\n> ";
@@ -314,6 +325,12 @@ int main()
 
       write(pipes[0][1], &choice, sizeof(int));
 
+      // Lógica de evasión
+      evadesAttack = checkEvasion(EVA);
+      cout << "evade: ";
+      cout << evadesAttack << endl;
+      // Hasta acá
+
       read(signalpipes[0][0], &signal, sizeof(signal));
       write(signalpipes[1][1], &signal, sizeof(signal));
 
@@ -322,8 +339,7 @@ int main()
     else if (!wrestlerPID2)
     {
       // Aquí debe ir la lógica del NPC en cada ronda
-
-      read(signalpipes[1][0], &signal, sizeof(signal));
+      read(signalpipes[1][0], &signal, sizeof(signal)); // Espera y lee la señal para partir ronda
 
       cout << "Salud luchador 2: ";
       cout << HP << endl;
@@ -343,6 +359,10 @@ int main()
       write(signalpipes[2][1], &signal, sizeof(signal));
 
       write(pipes[2][1], &choice, sizeof(int));
+
+      evadesAttack = checkEvasion(EVA);
+      cout << "evade: ";
+      cout << evadesAttack << endl;
 
       read(signalpipes[1][0], &signal, sizeof(signal));
       write(signalpipes[2][1], &signal, sizeof(signal));
@@ -374,6 +394,10 @@ int main()
 
       write(pipes[4][1], &choice, sizeof(int));
 
+      evadesAttack = checkEvasion(EVA);
+      cout << "evade: ";
+      cout << evadesAttack << endl;
+
       read(signalpipes[2][0], &signal, sizeof(signal));
       write(signalpipes[3][1], &signal, sizeof(signal));
 
@@ -400,6 +424,11 @@ int main()
         }
       }
       write(pipes[6][1], &choice, sizeof(int));
+
+      evadesAttack = checkEvasion(EVA);
+      cout << "evade: ";
+      cout << evadesAttack << endl;
+
       read(signalpipes[3][0], &signal, sizeof(signal));
       // Hasta acá
     }

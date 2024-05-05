@@ -262,17 +262,11 @@ int main()
   {
     for (i = 0; i < 4; i++)
     {
-      cout << "Stats Luchador ";
-      cout << i + 1 << endl;
-      cout << "Salud: ";
-      cout << stats[i][0] << endl;
-      cout << "Ataque: ";
-      cout << stats[i][1] << endl;
-      cout << "Defensa: ";
-      cout << stats[i][2] << endl;
-      cout << "Evasión: ";
-      cout << stats[i][3] << endl;
-      cout << endl;
+      printf("Stats Luchador %i\n", i+1);
+      printf("Salud: %i\n", stats[i][0]);
+      printf("Ataque: %i\n", stats[i][1]);
+      printf("Defensa: %i\n", stats[i][2]);
+      printf("Evasión: %i\n\n", stats[i][3]);
     }
   }
 
@@ -289,8 +283,10 @@ int main()
     isInvalid = 1;
     if (playerPID && wrestlerPID2 && wrestlerPID3 && wrestlerPID4)
     {
-      cout << "Ronda ";
-      cout << round << endl;
+      if (round != 1){
+        cout << endl;
+      }
+      printf("Ronda %i\n", round);
 
       // Muestra la salud de cada luchador al principio de cada ronda
       for (i = 0; i < 4; i++)
@@ -310,32 +306,28 @@ int main()
       // Comunicación con Jugador
       read(pipes[0][0], &choice, sizeof(int)); // Recibe elección de ataque del jugador
       attacksArray[0] = choice - 1;            // Se guarda su elección en un array en el índice del luchador correspondiente
-      cout << "El Luchador 1 ataca al Luchador ";
-      cout << choice << endl;
+      printf("El Luchador 1 ataca al Luchador %i\n", choice);
 
       read(pipes[0][0], &evadeArray[0], sizeof(int)); // Recibe un 1 si el jugador evade y un 0 en caso contrario y lo guarda en un array
 
       // Comunicación con Luchador 2
       read(pipes[2][0], &choice, sizeof(int)); // Recibe elección de ataque del luchador
       attacksArray[1] = choice - 1;            // Lo guarda en el array de ataques
-      cout << "El Luchador 2 ataca al Luchador ";
-      cout << choice << endl;
+      printf("El Luchador 2 ataca al Luchador %i\n", choice);
 
       read(pipes[2][0], &evadeArray[1], sizeof(int)); // Recibe evasión del luchador y lo guarda en array
 
       // Comunicación con Luchador 3
       read(pipes[4][0], &choice, sizeof(int)); // Recibe elección de ataque del luchador
       attacksArray[2] = choice - 1;            // Lo guarda en array
-      cout << "El Luchador 3 ataca al Luchador ";
-      cout << choice << endl;
+      printf("El Luchador 3 ataca al Luchador %i\n", choice);
 
       read(pipes[4][0], &evadeArray[2], sizeof(int)); // Recibe evasión del luchador y lo guarda en array
 
       // Comunicación con Luchador 4
       read(pipes[6][0], &choice, sizeof(int)); // Recibe elección de ataque del luchador
       attacksArray[3] = choice - 1;            // Lo guarda en array de ataques
-      cout << "El Luchador 4 ataca al Luchador ";
-      cout << choice << endl;
+      printf("El Luchador 4 ataca al Luchador %i\n", choice);
 
       read(pipes[6][0], &evadeArray[3], sizeof(int)); // Recibe evasión del luchador y lo guarda en array
 
@@ -350,9 +342,7 @@ int main()
         }
         else
         {
-          cout << "(!) El luchador ";
-          cout << attacked + 1;
-          cout << " Evadió el ataque!" << endl;
+          printf("(!) El luchador %i evadió el ataque del luchador %i!\n", attacked + 1, i+1);
           evadeArray[attacked] = 0; // Cada luchador puede ser atacado más de una vez por ronda, por lo que su evasión de cambia a 0 al evadir una vez
         }
       }

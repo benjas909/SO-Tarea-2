@@ -365,10 +365,12 @@ int main()
 
       while (isInvalid)
       {
-        cout << "¿A quién deseas atacar?... Parcero.\n\t1)Luchador 1\n\t2)Luchador 2\n\t3)Luchador 3\n> ";
-        cin >> choice;
-        if (choice != 1 && choice > 0 && choice <= 4) // Si la elección no es el mismo jugador y no está fuera de rango, es válida
+        int option;
+        cout << "¿A quién deseas atacar?... Parcero.\n\t1)Luchador 2\n\t2)Luchador 3\n\t3)Luchador 4\n> ";
+        cin >> option;
+        if (option >= 1 && option <= 3) 
         {
+          choice = option + 1;
           isInvalid = 0;
         }
         else
@@ -376,7 +378,7 @@ int main()
           cout << "Elección inválida." << endl;
         }
       }
-
+      
       write(signalpipes[1][1], &signal, sizeof(signal)); // Señal para que el siguiente luchador continúe
 
       write(pipes[0][1], &choice, sizeof(int)); // Envía su elección al padre

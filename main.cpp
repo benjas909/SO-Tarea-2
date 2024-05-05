@@ -3,8 +3,29 @@
 #include <sys/wait.h>
 #include <time.h>
 #include <random>
+#include <stdio.h>
+#include <fcntl.h>
 
 using namespace std;
+
+bool checkPipeClosed(int fd)
+{
+  int flags = fcntl(fd, F_GETFL);
+  if (flags == -1){
+    perror("fnctl");
+    return -1; //Error al obtener flags
+  }
+  if (flags & O_WRONLY)
+  {
+    return -1;
+  }
+
+  if (flags & O_RDONLY)
+  {
+    return -1;
+  }
+  return 0; // Pipe abierto
+}
 
 bool checkEvasion(double probability)
 {
@@ -278,6 +299,8 @@ int main()
   int evadeArray[4] = {0, 0, 0, 0};
   int attacksArray[4];
   int attacked;
+  bool alive[4] = {1, 1, 1, 1};
+  int w = -1; // índice del jugador ganador
   for (round = 1; noWinner; round++)
   {
     isInvalid = 1;
@@ -286,6 +309,14 @@ int main()
       if (round != 1){
         cout << endl;
       }
+      int c = alive[0] + alive[1] + alive[2] + alive[3];
+
+      if (c == 0 || c == 1)
+      {
+        noWinner = 0;
+        break;
+      }
+
       printf("Ronda %i\n", round);
 
       // Muestra la salud de cada luchador al principio de cada ronda
@@ -298,164 +329,298 @@ int main()
           cout << " (Tú)";
         }
         cout << ": ";
-        cout << stats[i][0] << endl;
+      
+        if (stats[i][0] <= 0){
+          cout << stats[i][0]; 
+          cout << "(Muerto)" << endl;
+        } else {
+          cout << stats[i][0] << endl; 
+        }
       }
 
       write(signalpipes[0][1], &signal, sizeof(signal)); // Señal de partida
 
       // Comunicación con Jugador
-      read(pipes[0][0], &choice, sizeof(int)); // Recibe elección de ataque del jugador
-      attacksArray[0] = choice - 1;            // Se guarda su elección en un array en el índice del luchador correspondiente
-      printf("El Luchador 1 ataca al Luchador %i\n", choice);
+      if (alive[0])
+      {
+        read(pipes[0][0], &choice, sizeof(int)); // Recibe elección de ataque del jugador
+        attacksArray[0] = choice - 1;            // Se guarda su elección en un array en el índice del luchador correspondiente
+        printf("El Luchador 1 ataca al Luchador %i\n", choice);
 
-      read(pipes[0][0], &evadeArray[0], sizeof(int)); // Recibe un 1 si el jugador evade y un 0 en caso contrario y lo guarda en un array
+        read(pipes[0][0], &evadeArray[0], sizeof(int)); // Recibe un 1 si el jugador evade y un 0 en caso contrario y lo guarda en un array
+      }
+      else
+      {
+        attacksArray[0] = -1;
+      }
 
       // Comunicación con Luchador 2
-      read(pipes[2][0], &choice, sizeof(int)); // Recibe elección de ataque del luchador
-      attacksArray[1] = choice - 1;            // Lo guarda en el array de ataques
-      printf("El Luchador 2 ataca al Luchador %i\n", choice);
+      if (alive[1])
+      {
+        read(pipes[2][0], &choice, sizeof(int)); // Recibe elección de ataque del luchador
+        attacksArray[1] = choice - 1;            // Lo guarda en el array de ataques
+        printf("El Luchador 2 ataca al Luchador %i\n", choice);
 
-      read(pipes[2][0], &evadeArray[1], sizeof(int)); // Recibe evasión del luchador y lo guarda en array
-
+        read(pipes[2][0], &evadeArray[1], sizeof(int)); // Recibe evasión del luchador y lo guarda en array
+      }
+      else
+      {
+        attacksArray[1] = -1;
+      }
+      
       // Comunicación con Luchador 3
-      read(pipes[4][0], &choice, sizeof(int)); // Recibe elección de ataque del luchador
-      attacksArray[2] = choice - 1;            // Lo guarda en array
-      printf("El Luchador 3 ataca al Luchador %i\n", choice);
+      if (alive[2])
+      {
+        read(pipes[4][0], &choice, sizeof(int)); // Recibe elección de ataque del luchador
+        attacksArray[2] = choice - 1;            // Lo guarda en array
+        printf("El Luchador 3 ataca al Luchador %i\n", choice);
 
-      read(pipes[4][0], &evadeArray[2], sizeof(int)); // Recibe evasión del luchador y lo guarda en array
+        read(pipes[4][0], &evadeArray[2], sizeof(int)); // Recibe evasión del luchador y lo guarda en array
+      }
+      else
+      {
+        attacksArray[2] = -1;
+      }
 
       // Comunicación con Luchador 4
-      read(pipes[6][0], &choice, sizeof(int)); // Recibe elección de ataque del luchador
-      attacksArray[3] = choice - 1;            // Lo guarda en array de ataques
-      printf("El Luchador 4 ataca al Luchador %i\n", choice);
+      if (alive[3])
+      {
+        read(pipes[6][0], &choice, sizeof(int)); // Recibe elección de ataque del luchador
+        attacksArray[3] = choice - 1;            // Lo guarda en array de ataques
+        printf("El Luchador 4 ataca al Luchador %i\n", choice);
 
-      read(pipes[6][0], &evadeArray[3], sizeof(int)); // Recibe evasión del luchador y lo guarda en array
+        read(pipes[6][0], &evadeArray[3], sizeof(int)); // Recibe evasión del luchador y lo guarda en array
+      }
+      else
+      {
+        attacksArray[3] = -1;
+      }
 
       // En el array attacksArray, se encuentran los blancos de ataque de cada luchador. 0: Jugador, 1: Luchador 2, etc
       // En el array evadeArray, se guardan en binario la evasión de cada luchador. Cada luchador tiene un 0 si no evade y un 1 si lo hace
       for (i = 0; i < 4; i++)
       {
         attacked = attacksArray[i];
-        if (!evadeArray[attacked]) // Si no evade
+        if (attacked != -1)
         {
-          stats[attacked][0] -= stats[i][1] - stats[attacked][2]; // HP = ATK atacante - Daño atacado
-        }
-        else
-        {
-          printf("(!) El luchador %i evadió el ataque del luchador %i!\n", attacked + 1, i+1);
-          evadeArray[attacked] = 0; // Cada luchador puede ser atacado más de una vez por ronda, por lo que su evasión de cambia a 0 al evadir una vez
+          w = i + 1;
+          if (!evadeArray[attacked]) // Si no evade
+          {
+            stats[attacked][0] -= stats[i][1] - stats[attacked][2]; // HP = ATK atacante - Daño atacado
+            if (stats[attacked][0] <= 0){
+              stats[attacked][0] = 0;
+              alive[attacked] = 0;
+            }
+          }
+          else
+          {
+            printf("(!) El luchador %i evadió el ataque del luchador %i!\n", attacked + 1, i+1);
+            evadeArray[attacked] = 0; // Cada luchador puede ser atacado más de una vez por ronda, por lo que su evasión de cambia a 0 al evadir una vez
+          }
         }
       }
-
+      write(pipes[1][1], &alive, sizeof(alive));
+      write(pipes[3][1], &alive, sizeof(alive));
+      write(pipes[5][1], &alive, sizeof(alive));
+      write(pipes[7][1], &alive, sizeof(alive));
       write(signalpipes[0][1], &signal, sizeof(signal)); // Señal de continuar
     }
     else if (!playerPID)
     {
       read(signalpipes[0][0], &signal, sizeof(signal)); // Señal de comienzo
-
-      while (isInvalid)
+      
+      if (round > 1)
       {
-        int option;
-        cout << "¿A quién deseas atacar?... Parcero.\n\t1)Luchador 2\n\t2)Luchador 3\n\t3)Luchador 4\n> ";
-        cin >> option;
-        if (option >= 1 && option <= 3) 
+        read(pipes[1][0], &alive, sizeof(alive));
+        int c = alive[0] + alive[1] + alive[2] + alive[3];
+        if (c == 0 || c == 1)
         {
-          choice = option + 1;
-          isInvalid = 0;
-        }
-        else
-        {
-          cout << "Elección inválida." << endl;
+          break;
         }
       }
-      
-      write(signalpipes[1][1], &signal, sizeof(signal)); // Señal para que el siguiente luchador continúe
 
-      write(pipes[0][1], &choice, sizeof(int)); // Envía su elección al padre
+      if (alive[0])
+      {
+        while (isInvalid)
+        {
+          int option;
+          cout << "¿A quién deseas atacar?... Parcero.\n";
+          for (i = 1; i <= 3; i++)
+          {
+            if (alive[i])
+            {
+              printf("\t%i)Luchador %i\n", i, i+1);
+            }
+          }
+          cout << "> ";
+          cin >> option;
+          if (option >= 1 && option <= 3 && alive[option]) 
+          {
+            choice = option + 1;
+            isInvalid = 0;
+          }
+          else
+          {
+            cout << "Elección inválida." << endl;
+          }
+        }
+        
+        write(signalpipes[1][1], &signal, sizeof(signal)); // Señal para que el siguiente luchador continúe
 
-      evadesAttack = checkEvasion(EVA);               // Calcula evasión
-      write(pipes[0][1], &evadesAttack, sizeof(int)); // Envía evasión al padre
+        write(pipes[0][1], &choice, sizeof(int)); // Envía su elección al padre
 
-      read(signalpipes[0][0], &signal, sizeof(signal));  // Recibe señal de fin de ronda de parte del padre
-      write(signalpipes[1][1], &signal, sizeof(signal)); // Transmite señal al luchador siguiente
+        evadesAttack = checkEvasion(EVA);               // Calcula evasión
+        write(pipes[0][1], &evadesAttack, sizeof(int)); // Envía evasión al padre
+
+        read(signalpipes[0][0], &signal, sizeof(signal));  // Recibe señal de fin de ronda de parte del padre
+        write(signalpipes[1][1], &signal, sizeof(signal)); // Transmite señal al luchador siguiente
+      }
+      else
+      {
+        write(signalpipes[1][1], &signal, sizeof(signal)); // Señal para que el siguiente luchador continúe
+        read(signalpipes[0][0], &signal, sizeof(signal));  // Recibe señal de fin de ronda de parte del padre
+        write(signalpipes[1][1], &signal, sizeof(signal)); // Transmite señal al luchador siguiente
+      }
     }
     else if (!wrestlerPID2)
     {
       read(signalpipes[1][0], &signal, sizeof(signal)); // Recibe señal para continuar
-
-      while (isInvalid)
+      if (round > 1)
       {
-        choice = randInt(1, 4);
-        if (choice != 2) // Si la elección aleatoria no es el mismo luchador, es válida
+        read(pipes[3][0], &alive, sizeof(alive));
+        int c = alive[0] + alive[1] + alive[2] + alive[3];
+        if (c == 0 || c == 1)
         {
-          isInvalid = 0;
+          break;
         }
       }
 
-      write(signalpipes[2][1], &signal, sizeof(signal)); // Envía señal para continuar al luchador siguiente
+      if (alive[1])
+      {
+        while (isInvalid)
+        {
+          choice = randInt(1, 4);
+          if (choice != 2 && alive[choice - 1]) // Si la elección aleatoria no es el mismo luchador, es válida
+          {
+            isInvalid = 0;
+          }
+        }
 
-      write(pipes[2][1], &choice, sizeof(int)); // Comunica su elección de ataque al padre
+        write(signalpipes[2][1], &signal, sizeof(signal)); // Envía señal para continuar al luchador siguiente
 
-      evadesAttack = checkEvasion(EVA);               // Calcula evasión
-      write(pipes[2][1], &evadesAttack, sizeof(int)); // Le dice al padre si evade o no
+        write(pipes[2][1], &choice, sizeof(int)); // Comunica su elección de ataque al padre
 
-      read(signalpipes[1][0], &signal, sizeof(signal));  // Recibe señal de fin de ronda
-      write(signalpipes[2][1], &signal, sizeof(signal)); // Transmite señal de fin de ronda
+        evadesAttack = checkEvasion(EVA);               // Calcula evasión
+        write(pipes[2][1], &evadesAttack, sizeof(int)); // Le dice al padre si evade o no
+        read(signalpipes[1][0], &signal, sizeof(signal));  // Recibe señal de fin de ronda
+        write(signalpipes[2][1], &signal, sizeof(signal)); // Transmite señal de fin de ronda
+      }
+      else
+      {
+        write(signalpipes[2][1], &signal, sizeof(signal));
+        read(signalpipes[1][0], &signal, sizeof(signal));  // Recibe señal de fin de ronda
+        write(signalpipes[2][1], &signal, sizeof(signal)); // Transmite señal de fin de ronda
+      }
     }
     else if (!wrestlerPID3)
     {
       read(signalpipes[2][0], &signal, sizeof(signal)); // Recibe señal para continuar
 
-      while (isInvalid)
+      if (round > 1)
       {
-        choice = randInt(1, 4);
-        if (choice != 3) // Si la elección aleatoria no es el mismo luchador, se válida
+        read(pipes[5][0], &alive, sizeof(alive));
+        int c = alive[0] + alive[1] + alive[2] + alive[3];
+        if (c == 0 || c == 1)
         {
-          isInvalid = 0;
+          break;
         }
       }
+      
+      if (alive[2])
+      {
+        while (isInvalid)
+        {
+          choice = randInt(1, 4);
+          if (choice != 3 && alive[choice - 1]) // Si la elección aleatoria no es el mismo luchador, se válida
+          {
+            isInvalid = 0;
+          }
+        }
 
-      write(signalpipes[3][1], &signal, sizeof(signal)); // Envía señal al luchador siguiente para que continúe
+        write(signalpipes[3][1], &signal, sizeof(signal)); // Envía señal al luchador siguiente para que continúe
 
-      write(pipes[4][1], &choice, sizeof(int)); // Comunica su elección de ataque al padre
+        write(pipes[4][1], &choice, sizeof(int)); // Comunica su elección de ataque al padre
 
-      evadesAttack = checkEvasion(EVA);               // Calcula si evade o no
-      write(pipes[4][1], &evadesAttack, sizeof(int)); // Comunica al padre si evade o no
+        evadesAttack = checkEvasion(EVA);               // Calcula si evade o no
+        write(pipes[4][1], &evadesAttack, sizeof(int)); // Comunica al padre si evade o no
+        read(signalpipes[2][0], &signal, sizeof(signal));  // Recibe señal de fin de ronda
+        write(signalpipes[3][1], &signal, sizeof(signal)); // Transmite señal de fin de ronda al siguiente luchador
+      }
+      else
+      {
+        write(signalpipes[3][1], &signal, sizeof(signal)); // Envía señal al luchador siguiente para que continúe
+        read(signalpipes[2][0], &signal, sizeof(signal));  // Recibe señal de fin de ronda
+        write(signalpipes[3][1], &signal, sizeof(signal)); // Transmite señal de fin de ronda al siguiente luchador
+      }
 
-      read(signalpipes[2][0], &signal, sizeof(signal));  // Recibe señal de fin de ronda
-      write(signalpipes[3][1], &signal, sizeof(signal)); // Transmite señal de fin de ronda al siguiente luchador
 
       // Hasta acá
     }
-    else if (!wrestlerPID4)
+    else if (!wrestlerPID4) 
     {
       read(signalpipes[3][0], &signal, sizeof(signal)); // Recibe señal para continuar
 
-      while (isInvalid)
+      if (round > 1)
       {
-        choice = randInt(1, 4);
-        if (choice != 4) // Si elección aleatoria de ataque no es el mismo luchador, es válida
+        read(pipes[7][0], &alive, sizeof(alive));
+        int c = alive[0] + alive[1] + alive[2] + alive[3];
+        if (c == 0 || c == 1)
         {
-          isInvalid = 0;
+          break;
         }
       }
-      write(pipes[6][1], &choice, sizeof(int)); // Envía su elección al padre
 
-      evadesAttack = checkEvasion(EVA);               // Calcula si evade o no
-      write(pipes[6][1], &evadesAttack, sizeof(int)); // Envía lo calculado al padre
+      if (alive[3])
+      {
+        while (isInvalid)
+        {
+          choice = randInt(1, 4);
+          if (choice != 4 && alive[choice - 1]) // Si elección aleatoria de ataque no es el mismo luchador, es válida
+          {
+            isInvalid = 0;
+          }
+        }
+        write(pipes[6][1], &choice, sizeof(int)); // Envía su elección al padre
 
-      read(signalpipes[3][0], &signal, sizeof(signal)); // Recibe señal de fin de ronda
+        evadesAttack = checkEvasion(EVA);               // Calcula si evade o no
+        write(pipes[6][1], &evadesAttack, sizeof(int)); // Envía lo calculado al padre
+        read(signalpipes[3][0], &signal, sizeof(signal)); // Recibe señal de fin de ronda
+      }
+      else
+      {
+        read(signalpipes[3][0], &signal, sizeof(signal)); // Recibe señal de fin de ronda
+      }
       // Hasta acá
-    }
-
-    if (round == 5) // Número arbitrario para testeo, hay que hacer la lógica de fin del juego
-    {
-      noWinner = 0;
     }
   }
 
   if (playerPID && wrestlerPID2 && wrestlerPID3 && wrestlerPID4)
   {
+    int c = alive[0] + alive[1] + alive[2] + alive[3];
+    if (c == 0)
+    {
+      printf("El ganador es el Luchador %i!\n\n", w);
+    }
+    else if (c == 1)
+    {
+      for (i = 0; i < 4; i++)
+      {
+        if (alive[i])
+        {
+          printf("¡El ganador es el Luchador %i!\n\n", i+1);
+        }
+      }
+    }
     int pipesUsed[][2] = {{0, 1}, {1, 0}, {2, 1}, {3, 0}, {4, 1}, {5, 0}, {6, 1}, {7, 0}};
     closePipesNotUsed(pipes, pipesUsed, sizeof(pipesUsed) / sizeof(pipesUsed[0]));
 

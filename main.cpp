@@ -168,6 +168,7 @@ int main()
 
   int noWinner = 1;
 
+  // Cálculo de stats
   HP = 100;
   ATK = randInt(30, 40);
   DEF = randInt(10, 25);
@@ -185,6 +186,7 @@ int main()
     int signalPipesUsed[][2] = {{0, 1}};
     closeSignalPipesNotUsed(signalpipes, signalPipesUsed, 1);
 
+    // Padre recibe array de stats de cada luchador y los guarda en array propio
     read(pipes[0][0], stats[0], 4 * sizeof(int));
     read(pipes[2][0], stats[1], 4 * sizeof(int));
     read(pipes[4][0], stats[2], 4 * sizeof(int));
@@ -198,12 +200,13 @@ int main()
     int signalPipesUsed[][2] = {{0, 0}, {1, 1}, {4, 0}};
     closeSignalPipesNotUsed(signalpipes, signalPipesUsed, sizeof(signalPipesUsed) / sizeof(signalPipesUsed[0]));
 
+    // Se guardan las stats en array temporal
     pStat[0] = HP;
     pStat[1] = ATK;
     pStat[2] = DEF;
     pStat[3] = EVA;
 
-    write(pipes[0][1], pStat, 4 * sizeof(int));
+    write(pipes[0][1], pStat, 4 * sizeof(int)); // Se envía el array al padre
   }
   else if (!wrestlerPID2)
   {
@@ -213,12 +216,13 @@ int main()
     int signalPipesUsed[][2] = {{1, 0}, {2, 1}};
     closeSignalPipesNotUsed(signalpipes, signalPipesUsed, sizeof(signalPipesUsed) / sizeof(signalPipesUsed[0]));
 
+    // Se guardan las stats en array temporal
     pStat[0] = HP;
     pStat[1] = ATK;
     pStat[2] = DEF;
     pStat[3] = EVA;
 
-    write(pipes[2][1], pStat, 4 * sizeof(int));
+    write(pipes[2][1], pStat, 4 * sizeof(int)); // Se envía el array al padre
   }
   else if (!wrestlerPID3)
   {
@@ -228,12 +232,13 @@ int main()
     int signalPipesUsed[][2] = {{2, 0}, {3, 1}};
     closeSignalPipesNotUsed(signalpipes, signalPipesUsed, sizeof(signalPipesUsed) / sizeof(signalPipesUsed[0]));
 
+    // Se guardan las stats en array temporal
     pStat[0] = HP;
     pStat[1] = ATK;
     pStat[2] = DEF;
     pStat[3] = EVA;
 
-    write(pipes[4][1], pStat, 4 * sizeof(int));
+    write(pipes[4][1], pStat, 4 * sizeof(int)); // Se envía el array al padre
   }
   else if (!wrestlerPID4)
   {
@@ -243,12 +248,13 @@ int main()
     int signalPipesUsed[][2] = {{3, 0}, {4, 1}};
     closeSignalPipesNotUsed(signalpipes, signalPipesUsed, sizeof(signalPipesUsed) / sizeof(signalPipesUsed[0]));
 
+    // Se guardan las stats en array temporal
     pStat[0] = HP;
     pStat[1] = ATK;
     pStat[2] = DEF;
     pStat[3] = EVA;
 
-    write(pipes[6][1], pStat, 4 * sizeof(int));
+    write(pipes[6][1], pStat, 4 * sizeof(int)); // Se envía el array al padre
   }
 
   // Se muestran los stats de cada uno antes de comenzar la partida
@@ -275,161 +281,178 @@ int main()
   int isInvalid = 1;
   int signal = 1;
   int evadesAttack = 0;
+  int evadeArray[4] = {0, 0, 0, 0};
+  int attacksArray[4];
+  int attacked;
   for (round = 1; noWinner; round++)
   {
+    isInvalid = 1;
     if (playerPID && wrestlerPID2 && wrestlerPID3 && wrestlerPID4)
     {
       cout << "Ronda ";
       cout << round << endl;
 
+      // Muestra la salud de cada luchador al principio de cada ronda
+      for (i = 0; i < 4; i++)
+      {
+        cout << "Salud Luchador ";
+        cout << i + 1;
+        if (!i)
+        {
+          cout << " (Tú)";
+        }
+        cout << ": ";
+        cout << stats[i][0] << endl;
+      }
+
       write(signalpipes[0][1], &signal, sizeof(signal)); // Señal de partida
 
-      read(pipes[0][0], &choice, sizeof(int));
-      cout << "El jugador 1 ataca al luchador ";
+      // Comunicación con Jugador
+      read(pipes[0][0], &choice, sizeof(int)); // Recibe elección de ataque del jugador
+      attacksArray[0] = choice - 1;            // Se guarda su elección en un array en el índice del luchador correspondiente
+      cout << "El Luchador 1 ataca al Luchador ";
       cout << choice << endl;
-      // Enviar al luchador atacado la stat de ataque del atacante.
 
-      read(pipes[2][0], &choice, sizeof(int));
-      cout << "El jugador 2 ataca al luchador ";
+      read(pipes[0][0], &evadeArray[0], sizeof(int)); // Recibe un 1 si el jugador evade y un 0 en caso contrario y lo guarda en un array
+
+      // Comunicación con Luchador 2
+      read(pipes[2][0], &choice, sizeof(int)); // Recibe elección de ataque del luchador
+      attacksArray[1] = choice - 1;            // Lo guarda en el array de ataques
+      cout << "El Luchador 2 ataca al Luchador ";
       cout << choice << endl;
-      // Enviar al luchador atacado la stat de ataque del atacante.
 
-      read(pipes[4][0], &choice, sizeof(int));
-      cout << "El jugador 3 ataca al luchador ";
+      read(pipes[2][0], &evadeArray[1], sizeof(int)); // Recibe evasión del luchador y lo guarda en array
+
+      // Comunicación con Luchador 3
+      read(pipes[4][0], &choice, sizeof(int)); // Recibe elección de ataque del luchador
+      attacksArray[2] = choice - 1;            // Lo guarda en array
+      cout << "El Luchador 3 ataca al Luchador ";
       cout << choice << endl;
-      // Enviar al luchador atacado la stat de ataque del atacante.
 
-      read(pipes[6][0], &choice, sizeof(int));
-      cout << "El jugador 4 ataca al luchador ";
+      read(pipes[4][0], &evadeArray[2], sizeof(int)); // Recibe evasión del luchador y lo guarda en array
+
+      // Comunicación con Luchador 4
+      read(pipes[6][0], &choice, sizeof(int)); // Recibe elección de ataque del luchador
+      attacksArray[3] = choice - 1;            // Lo guarda en array de ataques
+      cout << "El Luchador 4 ataca al Luchador ";
       cout << choice << endl;
-      // Enviar al luchador atacado la stat de ataque del atacante.
 
-      write(signalpipes[0][1], &signal, sizeof(signal));
+      read(pipes[6][0], &evadeArray[3], sizeof(int)); // Recibe evasión del luchador y lo guarda en array
+
+      // En el array attacksArray, se encuentran los blancos de ataque de cada luchador. 0: Jugador, 1: Luchador 2, etc
+      // En el array evadeArray, se guardan en binario la evasión de cada luchador. Cada luchador tiene un 0 si no evade y un 1 si lo hace
+      for (i = 0; i < 4; i++)
+      {
+        attacked = attacksArray[i];
+        if (!evadeArray[attacked]) // Si no evade
+        {
+          stats[attacked][0] -= stats[i][1] - stats[attacked][2]; // HP = ATK atacante - Daño atacado
+        }
+        else
+        {
+          cout << "(!) El luchador ";
+          cout << attacked + 1;
+          cout << " Evadió el ataque!" << endl;
+          evadeArray[attacked] = 0; // Cada luchador puede ser atacado más de una vez por ronda, por lo que su evasión de cambia a 0 al evadir una vez
+        }
+      }
+
+      write(signalpipes[0][1], &signal, sizeof(signal)); // Señal de continuar
     }
     else if (!playerPID)
     {
-      // Aquí debe ir la lógica del jugador en cada ronda
+      read(signalpipes[0][0], &signal, sizeof(signal)); // Señal de comienzo
 
-      read(signalpipes[0][0], &signal, sizeof(signal)); // Espera y lee la señal para partir
+      while (isInvalid)
+      {
+        cout << "¿A quién deseas atacar?... Parcero.\n\t1)Luchador 1\n\t2)Luchador 2\n\t3)Luchador 3\n> ";
+        cin >> choice;
+        if (choice != 1 && choice > 0 && choice <= 4) // Si la elección no es el mismo jugador y no está fuera de rango, es válida
+        {
+          isInvalid = 0;
+        }
+        else
+        {
+          cout << "Elección inválida." << endl;
+        }
+      }
 
-      cout << "Tu salud: ";
-      cout << HP << endl;
+      write(signalpipes[1][1], &signal, sizeof(signal)); // Señal para que el siguiente luchador continúe
 
-      write(signalpipes[1][1], &signal, sizeof(signal)); // Escribe señal para que el siguiente proceso comience la ronda
-      read(signalpipes[4][0], &signal, sizeof(signal));
+      write(pipes[0][1], &choice, sizeof(int)); // Envía su elección al padre
 
-      cout << "¿A quién deseas atacar?... Parcero.\n\t1)Luchador 1\n\t2)Luchador 2\n\t3)Luchador 3\n> ";
-      cin >> choice;
+      evadesAttack = checkEvasion(EVA);               // Calcula evasión
+      write(pipes[0][1], &evadesAttack, sizeof(int)); // Envía evasión al padre
 
-      write(signalpipes[1][1], &signal, sizeof(signal));
-
-      write(pipes[0][1], &choice, sizeof(int));
-
-      // Lógica de evasión
-      evadesAttack = checkEvasion(EVA);
-      cout << "evade: ";
-      cout << evadesAttack << endl;
-      // Hasta acá
-
-      read(signalpipes[0][0], &signal, sizeof(signal));
-      write(signalpipes[1][1], &signal, sizeof(signal));
-
-      // Hasta aquí
+      read(signalpipes[0][0], &signal, sizeof(signal));  // Recibe señal de fin de ronda de parte del padre
+      write(signalpipes[1][1], &signal, sizeof(signal)); // Transmite señal al luchador siguiente
     }
     else if (!wrestlerPID2)
     {
-      // Aquí debe ir la lógica del NPC en cada ronda
-      read(signalpipes[1][0], &signal, sizeof(signal)); // Espera y lee la señal para partir ronda
-
-      cout << "Salud luchador 2: ";
-      cout << HP << endl;
-
-      write(signalpipes[2][1], &signal, sizeof(signal));
-      read(signalpipes[1][0], &signal, sizeof(signal));
+      read(signalpipes[1][0], &signal, sizeof(signal)); // Recibe señal para continuar
 
       while (isInvalid)
       {
         choice = randInt(1, 4);
-        if (choice != 2)
+        if (choice != 2) // Si la elección aleatoria no es el mismo luchador, es válida
         {
           isInvalid = 0;
         }
       }
 
-      write(signalpipes[2][1], &signal, sizeof(signal));
+      write(signalpipes[2][1], &signal, sizeof(signal)); // Envía señal para continuar al luchador siguiente
 
-      write(pipes[2][1], &choice, sizeof(int));
+      write(pipes[2][1], &choice, sizeof(int)); // Comunica su elección de ataque al padre
 
-      evadesAttack = checkEvasion(EVA);
-      cout << "evade: ";
-      cout << evadesAttack << endl;
+      evadesAttack = checkEvasion(EVA);               // Calcula evasión
+      write(pipes[2][1], &evadesAttack, sizeof(int)); // Le dice al padre si evade o no
 
-      read(signalpipes[1][0], &signal, sizeof(signal));
-      write(signalpipes[2][1], &signal, sizeof(signal));
-
-      // Hasta acá
+      read(signalpipes[1][0], &signal, sizeof(signal));  // Recibe señal de fin de ronda
+      write(signalpipes[2][1], &signal, sizeof(signal)); // Transmite señal de fin de ronda
     }
     else if (!wrestlerPID3)
     {
-      // Aquí debe ir la lógica del NPC en cada ronda
-
-      read(signalpipes[2][0], &signal, sizeof(signal));
-
-      cout << "Salud luchador 3: ";
-      cout << HP << endl;
-
-      write(signalpipes[3][1], &signal, sizeof(signal));
-      read(signalpipes[2][0], &signal, sizeof(signal));
+      read(signalpipes[2][0], &signal, sizeof(signal)); // Recibe señal para continuar
 
       while (isInvalid)
       {
         choice = randInt(1, 4);
-        if (choice != 3)
+        if (choice != 3) // Si la elección aleatoria no es el mismo luchador, se válida
         {
           isInvalid = 0;
         }
       }
 
-      write(signalpipes[3][1], &signal, sizeof(signal));
+      write(signalpipes[3][1], &signal, sizeof(signal)); // Envía señal al luchador siguiente para que continúe
 
-      write(pipes[4][1], &choice, sizeof(int));
+      write(pipes[4][1], &choice, sizeof(int)); // Comunica su elección de ataque al padre
 
-      evadesAttack = checkEvasion(EVA);
-      cout << "evade: ";
-      cout << evadesAttack << endl;
+      evadesAttack = checkEvasion(EVA);               // Calcula si evade o no
+      write(pipes[4][1], &evadesAttack, sizeof(int)); // Comunica al padre si evade o no
 
-      read(signalpipes[2][0], &signal, sizeof(signal));
-      write(signalpipes[3][1], &signal, sizeof(signal));
+      read(signalpipes[2][0], &signal, sizeof(signal));  // Recibe señal de fin de ronda
+      write(signalpipes[3][1], &signal, sizeof(signal)); // Transmite señal de fin de ronda al siguiente luchador
 
       // Hasta acá
     }
     else if (!wrestlerPID4)
     {
-      // Aquí debe ir la lógica del NPC en cada ronda
-
-      read(signalpipes[3][0], &signal, sizeof(signal));
-
-      cout << "Salud luchador 4: ";
-      cout << HP << endl;
-
-      write(signalpipes[4][1], &signal, sizeof(signal));
-      read(signalpipes[3][0], &signal, sizeof(signal));
+      read(signalpipes[3][0], &signal, sizeof(signal)); // Recibe señal para continuar
 
       while (isInvalid)
       {
         choice = randInt(1, 4);
-        if (choice != 4)
+        if (choice != 4) // Si elección aleatoria de ataque no es el mismo luchador, es válida
         {
           isInvalid = 0;
         }
       }
-      write(pipes[6][1], &choice, sizeof(int));
+      write(pipes[6][1], &choice, sizeof(int)); // Envía su elección al padre
 
-      evadesAttack = checkEvasion(EVA);
-      cout << "evade: ";
-      cout << evadesAttack << endl;
+      evadesAttack = checkEvasion(EVA);               // Calcula si evade o no
+      write(pipes[6][1], &evadesAttack, sizeof(int)); // Envía lo calculado al padre
 
-      read(signalpipes[3][0], &signal, sizeof(signal));
+      read(signalpipes[3][0], &signal, sizeof(signal)); // Recibe señal de fin de ronda
       // Hasta acá
     }
 

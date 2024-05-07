@@ -340,60 +340,16 @@ int main()
 
       write(signalpipes[0][1], &signal, sizeof(signal)); // Señal de partida
 
-      // Comunicación con Jugador
-      if (alive[0])
+      // Comunicación con cada luchador
+      for (i = 0; i < 4; i++)
       {
-        read(pipes[0][0], &choice, sizeof(int)); // Recibe elección de ataque del jugador
-        attacksArray[0] = choice - 1;            // Se guarda su elección en un array en el índice del luchador correspondiente
-        printf("El Luchador 1 ataca al Luchador %i\n", choice);
-
-        read(pipes[0][0], &evadeArray[0], sizeof(int)); // Recibe un 1 si el jugador evade y un 0 en caso contrario y lo guarda en un array
-      }
-      else
-      {
-        attacksArray[0] = -1;
-      }
-
-      // Comunicación con Luchador 2
-      if (alive[1])
-      {
-        read(pipes[2][0], &choice, sizeof(int)); // Recibe elección de ataque del luchador
-        attacksArray[1] = choice - 1;            // Lo guarda en el array de ataques
-        printf("El Luchador 2 ataca al Luchador %i\n", choice);
-
-        read(pipes[2][0], &evadeArray[1], sizeof(int)); // Recibe evasión del luchador y lo guarda en array
-      }
-      else
-      {
-        attacksArray[1] = -1;
-      }
-      
-      // Comunicación con Luchador 3
-      if (alive[2])
-      {
-        read(pipes[4][0], &choice, sizeof(int)); // Recibe elección de ataque del luchador
-        attacksArray[2] = choice - 1;            // Lo guarda en array
-        printf("El Luchador 3 ataca al Luchador %i\n", choice);
-
-        read(pipes[4][0], &evadeArray[2], sizeof(int)); // Recibe evasión del luchador y lo guarda en array
-      }
-      else
-      {
-        attacksArray[2] = -1;
-      }
-
-      // Comunicación con Luchador 4
-      if (alive[3])
-      {
-        read(pipes[6][0], &choice, sizeof(int)); // Recibe elección de ataque del luchador
-        attacksArray[3] = choice - 1;            // Lo guarda en array de ataques
-        printf("El Luchador 4 ataca al Luchador %i\n", choice);
-
-        read(pipes[6][0], &evadeArray[3], sizeof(int)); // Recibe evasión del luchador y lo guarda en array
-      }
-      else
-      {
-        attacksArray[3] = -1;
+        if (alive[i])
+        {
+          read(pipes[i*2][0], &choice, sizeof(int)); // Recibe elección de ataque del jugador
+          attacksArray[i] = choice - 1;            // Se guarda su elección en un array en el índice del luchador correspondiente
+          printf("El Luchador %i ataca al Luchador %i\n", i+1, choice);
+          read(pipes[i*2][0], &evadeArray[i], sizeof(int)); // Recibe un 1 si el jugador evade y un 0 en caso contrario y lo guarda en un array
+        }
       }
 
       // En el array attacksArray, se encuentran los blancos de ataque de cada luchador. 0: Jugador, 1: Luchador 2, etc
@@ -419,10 +375,12 @@ int main()
           }
         }
       }
+      // Se envía del padre a cada hijo el array de los luchadores en pie.
       write(pipes[1][1], &alive, sizeof(alive));
       write(pipes[3][1], &alive, sizeof(alive));
       write(pipes[5][1], &alive, sizeof(alive));
       write(pipes[7][1], &alive, sizeof(alive));
+
       write(signalpipes[0][1], &signal, sizeof(signal)); // Señal de continuar
     }
     else if (!playerPID)

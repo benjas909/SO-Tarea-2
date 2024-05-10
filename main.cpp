@@ -310,6 +310,7 @@ int main()
         cout << endl;
       }
       int c = alive[0] + alive[1] + alive[2] + alive[3];
+
       if (c == 0 || c == 1)
       {
         noWinner = 0;
@@ -337,10 +338,7 @@ int main()
         }
       }
 
-      write(pipes[1][1], &signal, sizeof(signal)); // Señal de partida
-      write(pipes[3][1], &signal, sizeof(signal));
-      write(pipes[5][1], &signal, sizeof(signal));
-      write(pipes[7][1], &signal, sizeof(signal));
+      write(signalpipes[0][1], &signal, sizeof(signal)); // Señal de partida
 
       // Comunicación con cada luchador
       for (i = 0; i < 4; i++)
@@ -352,12 +350,7 @@ int main()
           printf("El Luchador %i ataca al Luchador %i\n", i+1, choice);
           read(pipes[i*2][0], &evadeArray[i], sizeof(int)); // Recibe un 1 si el jugador evade y un 0 en caso contrario y lo guarda en un array
         }
-        else
-        {
-          attacksArray[i] = -1;
-        }
       }
-      
 
       // En el array attacksArray, se encuentran los blancos de ataque de cada luchador. 0: Jugador, 1: Luchador 2, etc
       // En el array evadeArray, se guardan en binario la evasión de cada luchador. Cada luchador tiene un 0 si no evade y un 1 si lo hace
@@ -388,20 +381,15 @@ int main()
       write(pipes[5][1], &alive, sizeof(alive));
       write(pipes[7][1], &alive, sizeof(alive));
 
-      write(pipes[1][1], &signal, sizeof(signal)); // Señal de partida
-      write(pipes[3][1], &signal, sizeof(signal));
-      write(pipes[5][1], &signal, sizeof(signal));
-      write(pipes[7][1], &signal, sizeof(signal));
+      write(signalpipes[0][1], &signal, sizeof(signal)); // Señal de continuar
     }
     else if (!playerPID)
     {
-      
-      read(pipes[1][0], &signal, sizeof(signal)); // Señal de comienzo
+      read(signalpipes[0][0], &signal, sizeof(signal)); // Señal de comienzo
       
       if (round > 1)
       {
         read(pipes[1][0], &alive, sizeof(alive));
-
         int c = alive[0] + alive[1] + alive[2] + alive[3];
         if (c == 0 || c == 1)
         {
@@ -435,23 +423,30 @@ int main()
           }
         }
         
+        write(signalpipes[1][1], &signal, sizeof(signal)); // Señal para que el siguiente luchador continúe
+
         write(pipes[0][1], &choice, sizeof(int)); // Envía su elección al padre
 
         evadesAttack = checkEvasion(EVA);               // Calcula evasión
         write(pipes[0][1], &evadesAttack, sizeof(int)); // Envía evasión al padre
+
+        read(signalpipes[0][0], &signal, sizeof(signal));  // Recibe señal de fin de ronda de parte del padre
+        write(signalpipes[1][1], &signal, sizeof(signal)); // Transmite señal al luchador siguiente
       }
-      read(pipes[1][0], &signal, sizeof(signal)); // Señal de fin
-      
+      else
+      {
+        write(signalpipes[1][1], &signal, sizeof(signal)); // Señal para que el siguiente luchador continúe
+        read(signalpipes[0][0], &signal, sizeof(signal));  // Recibe señal de fin de ronda de parte del padre
+        write(signalpipes[1][1], &signal, sizeof(signal)); // Transmite señal al luchador siguiente
+      }
     }
     else if (!wrestlerPID2)
     {
-      read(pipes[3][0], &signal, sizeof(signal)); // Recibe señal para continuar
-
+      read(signalpipes[1][0], &signal, sizeof(signal)); // Recibe señal para continuar
       if (round > 1)
       {
         read(pipes[3][0], &alive, sizeof(alive));
         int c = alive[0] + alive[1] + alive[2] + alive[3];
-        
         if (c == 0 || c == 1)
         {
           break;
@@ -469,16 +464,25 @@ int main()
           }
         }
 
+        write(signalpipes[2][1], &signal, sizeof(signal)); // Envía señal para continuar al luchador siguiente
+
         write(pipes[2][1], &choice, sizeof(int)); // Comunica su elección de ataque al padre
+
         evadesAttack = checkEvasion(EVA);               // Calcula evasión
         write(pipes[2][1], &evadesAttack, sizeof(int)); // Le dice al padre si evade o no
+        read(signalpipes[1][0], &signal, sizeof(signal));  // Recibe señal de fin de ronda
+        write(signalpipes[2][1], &signal, sizeof(signal)); // Transmite señal de fin de ronda
       }
-
-      read(pipes[3][0], &signal, sizeof(signal)); // Señal de fin
+      else
+      {
+        write(signalpipes[2][1], &signal, sizeof(signal));
+        read(signalpipes[1][0], &signal, sizeof(signal));  // Recibe señal de fin de ronda
+        write(signalpipes[2][1], &signal, sizeof(signal)); // Transmite señal de fin de ronda
+      }
     }
     else if (!wrestlerPID3)
     {
-      read(pipes[5][0], &signal, sizeof(signal)); // Recibe señal para continuar
+      read(signalpipes[2][0], &signal, sizeof(signal)); // Recibe señal para continuar
 
       if (round > 1)
       {
@@ -501,17 +505,28 @@ int main()
           }
         }
 
+        write(signalpipes[3][1], &signal, sizeof(signal)); // Envía señal al luchador siguiente para que continúe
+
         write(pipes[4][1], &choice, sizeof(int)); // Comunica su elección de ataque al padre
 
         evadesAttack = checkEvasion(EVA);               // Calcula si evade o no
         write(pipes[4][1], &evadesAttack, sizeof(int)); // Comunica al padre si evade o no
+        read(signalpipes[2][0], &signal, sizeof(signal));  // Recibe señal de fin de ronda
+        write(signalpipes[3][1], &signal, sizeof(signal)); // Transmite señal de fin de ronda al siguiente luchador
       }
-      read(pipes[5][0], &signal, sizeof(signal)); // Señal de fin
+      else
+      {
+        write(signalpipes[3][1], &signal, sizeof(signal)); // Envía señal al luchador siguiente para que continúe
+        read(signalpipes[2][0], &signal, sizeof(signal));  // Recibe señal de fin de ronda
+        write(signalpipes[3][1], &signal, sizeof(signal)); // Transmite señal de fin de ronda al siguiente luchador
+      }
+
+
       // Hasta acá
     }
     else if (!wrestlerPID4) 
     {
-      read(pipes[7][0], &signal, sizeof(signal)); // Recibe señal para continuar
+      read(signalpipes[3][0], &signal, sizeof(signal)); // Recibe señal para continuar
 
       if (round > 1)
       {
@@ -537,8 +552,12 @@ int main()
 
         evadesAttack = checkEvasion(EVA);               // Calcula si evade o no
         write(pipes[6][1], &evadesAttack, sizeof(int)); // Envía lo calculado al padre
+        read(signalpipes[3][0], &signal, sizeof(signal)); // Recibe señal de fin de ronda
       }
-      read(pipes[7][0], &signal, sizeof(signal)); // Señal de fin
+      else
+      {
+        read(signalpipes[3][0], &signal, sizeof(signal)); // Recibe señal de fin de ronda
+      }
       // Hasta acá
     }
   }

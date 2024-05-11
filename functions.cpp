@@ -94,3 +94,13 @@ int randInt(int low, int high)
 
   return distr(gen);
 }
+
+bool checkWinner(bool alive[4])
+{
+  int count = alive[0] + alive[1] + alive[2] + alive[3];
+  if (count == 0 || count == 1)
+  {
+    return true;
+  }
+  return false;
+}

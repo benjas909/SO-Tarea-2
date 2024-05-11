@@ -139,7 +139,6 @@ int main()
     }
   }
 
-  
   int signal = 1;
   int evadesAttack = 0;
   int evadeArray[4] = {0, 0, 0, 0};
@@ -155,18 +154,13 @@ int main()
     bool isInvalid = 1;
     if (playerPID && wrestlerPID2 && wrestlerPID3 && wrestlerPID4)
     {
-      if (round != 1){
-        cout << endl;
-      }
-      int c = alive[0] + alive[1] + alive[2] + alive[3];
-
-      if (c == 0 || c == 1)
+      if(checkWinner(alive)) // Check si hay ganador
       {
         noWinner = 0;
         break;
       }
 
-      printf("Ronda %i\n", round);
+      printf("\nRonda %i\n", round);
 
       // Muestra la salud de cada luchador al principio de cada ronda
       for (i = 0; i < 4; i++)
@@ -240,8 +234,7 @@ int main()
       if (round > 1)
       {
         read(pipes[wf_index + 1][0], &alive, sizeof(alive)); // Lee el pipe del padre al luchador
-        int c = alive[0] + alive[1] + alive[2] + alive[3]; // Cantidad de jugadores vivos
-        if (c == 0 || c == 1)
+        if(checkWinner(alive)) // Check si hay ganador
         {
           break;
         }
@@ -299,7 +292,6 @@ int main()
       {
         write(signalpipes[sg_index + 1][1], &signal, sizeof(signal)); // Transmite señal al luchador siguiente
       }
-      
     }
   }
 

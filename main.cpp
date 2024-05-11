@@ -177,7 +177,7 @@ int main()
         {
           read(pipes[i*2][0], &choice, sizeof(int)); // Recibe elección de ataque del jugador
           attacksArray[i] = choice - 1;            // Se guarda su elección en un array en el índice del luchador correspondiente
-          printf("El Luchador %i ataca al Luchador %i (-%i)\n", i+1, choice, stats[i][1] - stats[choice][2]);
+          printf("El Luchador %i ataca al Luchador %i (-%i)\n", i+1, choice, stats[i][1] - stats[choice-1][2]);
           read(pipes[i*2][0], &evadeArray[i], sizeof(int)); // Recibe un 1 si el jugador evade y un 0 en caso contrario y lo guarda en un array
         }
         else

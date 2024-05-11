@@ -1,6 +1,6 @@
 CC=g++
 CCFLAGS=-Wall
-SOURCES=main.cpp
+SOURCES=main.cpp functions.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 EXECUTABLE=main
 
